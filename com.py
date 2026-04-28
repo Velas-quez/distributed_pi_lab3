@@ -9,6 +9,7 @@ Port = 1883 # standard MQTT port
 position = None
 positions = {} # Dictionary to store positions of all robots
 pipuck = None
+self_robot_id = "38" # Unique ID for this robo
 
 def get_position(robot_id, data):
     position = data.get(robot_id, {}).get('position', None)
@@ -33,21 +34,21 @@ def get_distance(pos1, pos2):
     return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
 
 def handle_robot_topic(data):
-    print(f"Mensagem recebida em robot/38: {data}")
+    print(f"Mensagem recebida em robot/{self_robot_id}: {data}")
     if pipuck is not None:
-        blink_robot_leds(pipuck, times=3, interval=0.2, colour="green")
+        blink_robot_leds(pipuck, times=3, interval=0.05, colour="green")
 
 def handle_robot_positions(data):
     global position
     global positions
-    position = get_position("38", data)
+    position = get_position(self_robot_id, data)
     positions = data
 
 # function to handle connection
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe("robot_pos/all")
-    client.subscribe("robot/38")
+    client.subscribe(f"robot/{self_robot_id}")
 
 # function to handle incoming messages
 def on_message(client, userdata, msg):
@@ -57,7 +58,7 @@ def on_message(client, userdata, msg):
         print(f'invalid json: {msg.payload}')
         return
 
-    if msg.topic == "robot/38":
+    if msg.topic == f"robot/{self_robot_id}":
         handle_robot_topic(data)
     elif msg.topic == "robot_pos/all":
         handle_robot_positions(data)
@@ -78,7 +79,7 @@ pipuck = PiPuck(epuck_version=2)
 
 # Set the robot's speed, e.g. with
 pipuck.epuck.set_motor_speeds(0,-0)
-publish_robot_message(client, "38", {"status": "online"})
+publish_robot_message(client, self_robot_id, {"status": "online"})
 blink_robot_leds(pipuck, times=2, interval=0.2)
 
 for _ in range(1000):
@@ -86,10 +87,12 @@ for _ in range(1000):
         print(f"Current position: {position}")
     if(positions):
         for robot_id, info in positions.items():
+            if robot_id == self_robot_id:
+                continue  # Skip self
             distance = get_distance(position, info.get('position'))
             if distance <= 0.5:
                 print(f"Robot {robot_id} is close!")
-                publish_robot_message(client, robot_id, {"message": "Hello from robot 38!"})
+                publish_robot_message(client, robot_id, {"message": f"Hello from robot {self_robot_id}!"})
                 print(f"Message sent to robot {robot_id}")
     time.sleep(1)
 	

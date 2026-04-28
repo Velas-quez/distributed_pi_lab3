@@ -86,12 +86,10 @@ for _ in range(1000):
         print(f"Current position: {position}")
     if(positions):
         for robot_id, info in positions.items():
-            print(f"Position for robot {robot_id}: {info.get('position')}")
             distance = get_distance(position, info.get('position'))
-            print(f"Distance to robot {robot_id}: {distance}")
             if distance <= 0.5:
                 print(f"Robot {robot_id} is close!")
-                publish_robot_message(client, robot_id, "Hello from robot 38!")
+                publish_robot_message(client, robot_id, {"message": "Hello from robot 38!"})
                 print(f"Message sent to robot {robot_id}")
     time.sleep(1)
 	

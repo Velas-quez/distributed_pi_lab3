@@ -11,13 +11,12 @@ position = None
 # function to handle connection
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
-    client.subscribe("robot_pos/all")
+    client.subscribe("robot_pos/38")
 
 # function to handle incoming messages
 def on_message(client, userdata, msg):
     try:
         data = json.loads(msg.payload.decode())
-        print(data)
         position = data.get('position', None)
     except json.JSONDecodeError:
         print(f'invalid json: {msg.payload}')

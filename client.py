@@ -33,7 +33,7 @@ client.loop_start() # Start listening loop in separate thread
 pipuck = PiPuck(epuck_version=2)
 
 # Set the robot's speed, e.g. with
-pipuck.epuck.set_motor_speeds(1000,-1000)
+pipuck.epuck.set_motor_speeds(0,-0)
 
 for _ in range(1000):
     # TODO: Do your stuff here

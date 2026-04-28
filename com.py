@@ -13,6 +13,19 @@ def get_position(robot_id, data):
     position = data.get(robot_id, {}).get('position', None)
     return position
 
+def publish_robot_message(client, robot_id, message):
+    topic = f"robot/{robot_id}"
+    payload = message if isinstance(message, str) else json.dumps(message)
+    result = client.publish(topic, payload)
+    return result
+
+def blink_robot_leds(pipuck, times=3, interval=0.3, colour="white"):
+    for _ in range(times):
+        pipuck.set_leds_colour(colour)
+        time.sleep(interval)
+        pipuck.set_leds_colour("off")
+        time.sleep(interval)
+
 def get_distance(pos1, pos2):
     if pos1 is None or pos2 is None:
         return float('inf')  # Return infinity if either position is None
@@ -48,6 +61,8 @@ pipuck = PiPuck(epuck_version=2)
 
 # Set the robot's speed, e.g. with
 pipuck.epuck.set_motor_speeds(0,-0)
+publish_robot_message(client, "38", {"status": "online"})
+blink_robot_leds(pipuck, times=2, interval=0.2)
 
 for _ in range(1000):
     if(position is not None):
@@ -55,7 +70,13 @@ for _ in range(1000):
     if(positions):
         for robot_id, info in positions.items():
             print(f"Position for robot {robot_id}: {info.get('position')}")
-            print(f"Distance to robot {robot_id}: {get_distance(position, info.get('position'))}")
+            distance = get_distance(position, info.get('position'))
+            print(f"Distance to robot {robot_id}: {distance}")
+            if distance <= 0.5:
+                print(f"Robot {robot_id} is close!")
+                blink_robot_leds(pipuck, times=5, interval=0.1, colour="red")
+                publish_robot_message(client, robot_id, "Hello from robot 38!")
+                print(f"Message sent to robot {robot_id}")
     time.sleep(1)
 	
     

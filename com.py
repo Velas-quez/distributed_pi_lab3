@@ -15,6 +15,7 @@ def on_connect(client, userdata, flags, rc):
 
 # function to handle incoming messages
 def on_message(client, userdata, msg):
+    global position
     try:
         data = json.loads(msg.payload.decode())
         position = data.get('position', None)

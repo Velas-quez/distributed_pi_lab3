@@ -8,6 +8,7 @@ Broker = "192.168.178.43"  # Replace with your broker address
 Port = 1883 # standard MQTT port
 position = None
 positions = {} # Dictionary to store positions of all robots
+pipuck = None
 
 def get_position(robot_id, data):
     position = data.get(robot_id, {}).get('position', None)
@@ -31,21 +32,37 @@ def get_distance(pos1, pos2):
         return float('inf')  # Return infinity if either position is None
     return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
 
+def handle_robot_topic(data):
+    print(f"Mensagem recebida em robot/38: {data}")
+    if pipuck is not None:
+        blink_robot_leds(pipuck, times=3, interval=0.2, colour="green")
+
+def handle_robot_positions(data):
+    global position
+    global positions
+    position = get_position("38", data)
+    positions = data
+
 # function to handle connection
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
     client.subscribe("robot_pos/all")
+    client.subscribe("robot/38")
 
 # function to handle incoming messages
 def on_message(client, userdata, msg):
-    global position
-    global positions
     try:
         data = json.loads(msg.payload.decode())
-        position = get_position("38", data)
-        positions = data
     except json.JSONDecodeError:
         print(f'invalid json: {msg.payload}')
+        return
+
+    if msg.topic == "robot/38":
+        handle_robot_topic(data)
+    elif msg.topic == "robot_pos/all":
+        handle_robot_positions(data)
+    else:
+        print(f"Unhandled topic {msg.topic}: {data}")
 
 # Initialize MQTT client
 client = mqtt.Client()
@@ -74,7 +91,6 @@ for _ in range(1000):
             print(f"Distance to robot {robot_id}: {distance}")
             if distance <= 0.5:
                 print(f"Robot {robot_id} is close!")
-                blink_robot_leds(pipuck, times=5, interval=0.1, colour="red")
                 publish_robot_message(client, robot_id, "Hello from robot 38!")
                 print(f"Message sent to robot {robot_id}")
     time.sleep(1)

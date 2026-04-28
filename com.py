@@ -7,6 +7,11 @@ from pipuck.pipuck import PiPuck
 Broker = "192.168.178.43"  # Replace with your broker address
 Port = 1883 # standard MQTT port
 position = None
+positions = {} # Dictionary to store positions of all robots
+
+def get_position(robot_id, data):
+    position = data.get(robot_id, {}).get('position', None)
+    return position
 
 # function to handle connection
 def on_connect(client, userdata, flags, rc):
@@ -16,9 +21,11 @@ def on_connect(client, userdata, flags, rc):
 # function to handle incoming messages
 def on_message(client, userdata, msg):
     global position
+    global positions
     try:
         data = json.loads(msg.payload.decode())
-        position = data.get('38', {}).get('position', None)
+        position = get_position("38", data)
+        positions = data
     except json.JSONDecodeError:
         print(f'invalid json: {msg.payload}')
 
@@ -40,6 +47,9 @@ pipuck.epuck.set_motor_speeds(0,-0)
 for _ in range(1000):
     if(position is not None):
         print(f"Current position: {position}")
+    if(positions):
+        for robot_id, info in positions.items():
+            print(f"Position for robot {robot_id}: {info.get('position')}")
     time.sleep(1)
 	
     

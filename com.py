@@ -13,6 +13,11 @@ def get_position(robot_id, data):
     position = data.get(robot_id, {}).get('position', None)
     return position
 
+def get_distance(pos1, pos2):
+    if pos1 is None or pos2 is None:
+        return float('inf')  # Return infinity if either position is None
+    return ((pos1[0] - pos2[0]) ** 2 + (pos1[1] - pos2[1]) ** 2) ** 0.5
+
 # function to handle connection
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
@@ -50,6 +55,7 @@ for _ in range(1000):
     if(positions):
         for robot_id, info in positions.items():
             print(f"Position for robot {robot_id}: {info.get('position')}")
+            print(f"Distance to robot {robot_id}: {get_distance(position, info.get('position'))}")
     time.sleep(1)
 	
     
